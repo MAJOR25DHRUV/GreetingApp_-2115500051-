@@ -3,6 +3,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NLog;
 using NLog.Web;
+using BusinessLayer.Interface;
+using BusinessLayer.Service;
 
 var logger = LogManager.Setup().LoadConfigurationFromFile("nlog.config").GetCurrentClassLogger();
 logger.Info("Starting the application...");
@@ -15,6 +17,7 @@ try
     builder.Logging.ClearProviders(); // Remove default logging providers
     builder.Host.UseNLog(); // Use NLog
 
+    builder.Services.AddScoped<IGreetingBL, GreetingBL>();
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();

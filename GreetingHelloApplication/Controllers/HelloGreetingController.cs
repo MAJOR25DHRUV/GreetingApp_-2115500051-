@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using ModelLayer.Model;
+using BusinessLayer.Interface;
 using System.Collections.Generic;
 
 namespace HelloGreetingApplication.Controllers
@@ -14,10 +15,12 @@ namespace HelloGreetingApplication.Controllers
     {
         private readonly ILogger<HelloGreetingController> _logger;
         private static Dictionary<string, string> KeyValueStore = new Dictionary<string, string>();
+        private readonly IGreetingBL _greetingBL;
         
-        public HelloGreetingController(ILogger<HelloGreetingController> logger)
+        public HelloGreetingController(ILogger<HelloGreetingController> logger, IGreetingBL greetingBL)
         {
             _logger = logger;
+            _greetingBL = greetingBL;
         }
         /// <summary>: Get method to get Greeting Message
         /// </summary>
@@ -122,7 +125,25 @@ namespace HelloGreetingApplication.Controllers
                 Success = false,
                 Message = $"Delete request failed : key={key} not found"
             });
-        } 
+        }
+        [HttpGet("greet")]
+        public IActionResult GetGreeting()
+        {
+            _logger.LogInformation("GET request received at /hellogreeting/greet");
+
+            string greetingMessage = _greetingBL.GetGreeting();
+
+            ResponseModel<string> responseModel = new ResponseModel<string>
+            {
+                Success = true,
+                Message = "Greeting message retrieved successfully",
+                Data = greetingMessage
+            };
+
+            return Ok(responseModel);
+        }
+
+
 
     }
 }
