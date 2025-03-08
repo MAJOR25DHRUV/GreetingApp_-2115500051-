@@ -5,6 +5,8 @@ using NLog;
 using NLog.Web;
 using BusinessLayer.Interface;
 using BusinessLayer.Service;
+using RepositoryLayer.Service;
+using RepositoryLayer.Interface;
 
 var logger = LogManager.Setup().LoadConfigurationFromFile("nlog.config").GetCurrentClassLogger();
 logger.Info("Starting the application...");
@@ -18,6 +20,7 @@ try
     builder.Host.UseNLog(); // Use NLog
 
     builder.Services.AddScoped<IGreetingBL, GreetingBL>();
+    builder.Services.AddScoped<IGreetingRL, GreetingRL>();
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
