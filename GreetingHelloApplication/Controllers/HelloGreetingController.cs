@@ -1,7 +1,8 @@
+using BusinessLayer.Interface;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using ModelLayer.Model;
-using BusinessLayer.Interface;
+using RepositoryLayer.Entity;
 using System.Collections.Generic;
 
 namespace HelloGreetingApplication.Controllers
@@ -14,118 +15,148 @@ namespace HelloGreetingApplication.Controllers
     public class HelloGreetingController : ControllerBase
     {
         private readonly ILogger<HelloGreetingController> _logger;
-        private static Dictionary<string, string> KeyValueStore = new Dictionary<string, string>();
+        private static Dictionary<string, string> keyValueStore = new Dictionary<string, string>();
         private readonly IGreetingBL _greetingBL;
-        
+
         public HelloGreetingController(ILogger<HelloGreetingController> logger, IGreetingBL greetingBL)
         {
             _logger = logger;
             _greetingBL = greetingBL;
         }
-        /// <summary>: Get method to get Greeting Message
+
+        /// <summary>
+        /// Get method to get the greeting message
         /// </summary>
-        /// <returns> Hello To Greeting App API endpoint</returns>
+        /// <returns>Hello to Greeting App API endpoint Hit</returns>
         [HttpGet]
         public IActionResult Get()
         {
-            _logger.LogInformation("Get Request From HelloGReeting");
-            ResponseModel<string> response = new ResponseModel<String>
+            _logger.LogInformation("GET request received at /hellogreeting");
+
+            ResponseModel<string> responseModel = new ResponseModel<string>
             {
-                Data = "Hello To Greeting App API endpoint",
+                Message = "Hello to Greeting App API endpoint Hit",
                 Success = true,
-                Message = "Get Request From HelloGreeting"
+                Data = "Hello, World!"
             };
-            return Ok(response);
+
+            return Ok(responseModel);
         }
-        ///<summary>:Add method to add the new key-value pair</summary>
-        ///<param name="requestModel">key-value pair</param>
-        ///<returns>Request received successfully and stored</returns>
+
+        /// <summary>
+        /// Add method to add the new key-value pair
+        /// </summary>
+        /// <param name="requestModel">Key-value pair</param>
+        /// <returns>Request received successfully and stored</returns>
         [HttpPost]
         public IActionResult Post(RequestModel requestModel)
         {
-            _logger.LogInformation($"Post request received: key={requestModel.key},Value = {requestModel.value}");
-            KeyValueStore[requestModel.key] = requestModel.value;
-            return Ok(
-                new ResponseModel<string>
-                {
-                    Data = "Request received successfully and stored",
-                    Success = true,
-                    Message = $"Post request received: key={requestModel.key},Value = {requestModel.value}"
-                });
+            _logger.LogInformation($"POST request received: Key = {requestModel.key}, Value = {requestModel.value}");
+
+            keyValueStore[requestModel.key] = requestModel.value;
+
+            return Ok(new ResponseModel<string>
+            {
+                Success = true,
+                Message = "Request received successfully and stored",
+                Data = $"Key: {requestModel.key}, Value: {requestModel.value}"
+            });
         }
-        ///<summary>:Update an existing value</summary>
-        ///<param name="requestModel">key</param>
-        ///<returns>Value of the key</returns>
+
+        /// <summary>
+        /// Update and existing key-value pair
+        /// </summary>
+        /// <param name="requestModel"></param>
+        /// <returns>Updated Successfully</returns>
         [HttpPut]
         public IActionResult Put(RequestModel requestModel)
         {
-            if (KeyValueStore.ContainsKey(requestModel.key))
+            if (keyValueStore.ContainsKey(requestModel.key))
             {
-                _logger.LogInformation($"Put request received : key={requestModel.key}");
-                KeyValueStore[requestModel.key] = requestModel.value;
+                _logger.LogInformation($"PUT request updating key {requestModel.key}");
+
+                keyValueStore[requestModel.key] = requestModel.value;
+
                 return Ok(new ResponseModel<string>
                 {
-                    Data = KeyValueStore[requestModel.key],
                     Success = true,
-                    Message = $"Put request received : key={requestModel.key}"
+                    Message = "Updated Successfully",
+                    Data = $"Key: {requestModel.key}, New Value: {requestModel.value}"
                 });
-
             }
-            _logger.LogInformation($"Put request failed : key={requestModel.key} not found");
+
+            _logger.LogWarning($"PUT request failed: Key {requestModel.key} not found");
             return NotFound(new ResponseModel<string>
             {
-                Data = "Key not found",
                 Success = false,
-                Message = $"Put request failed : key={requestModel.key} not found"
+                Message = "Key not found"
             });
         }
-        ///<summary>:Patch method to update the value of the key</summary>
-        ///<param name="requestModel">key</param>
-        ///<returns>Value of the key</returns>
+
+        /// <summary>
+        /// Modify an existing key-value pair if exists
+        /// </summary>
+        /// <param name="requestModel">key-value pair</param>
+        /// <returns>value patched successfully</returns>
         [HttpPatch]
         public IActionResult Patch(RequestModel requestModel)
         {
-            if (KeyValueStore.ContainsKey(requestModel.key))
+            if (keyValueStore.ContainsKey(requestModel.key))
             {
-                _logger.LogInformation($"Patch request received : key={requestModel.key}");
-                KeyValueStore[requestModel.key] = requestModel.value;
+                _logger.LogInformation($"PATCH request modifying key {requestModel.key}");
+
+                keyValueStore[requestModel.key] = requestModel.value;
+
                 return Ok(new ResponseModel<string>
                 {
-                    Data = KeyValueStore[requestModel.key],
                     Success = true,
-                    Message = $"Patch request received : key={requestModel.key}"
+                    Message = "Value patched successfully",
+                    Data = $"Key: {requestModel.key}, Updated Value: {requestModel.value}"
                 });
             }
-            _logger.LogInformation($"Patch request failed : key={requestModel.key} not found");
+
+            _logger.LogWarning($"PATCH request failed: Key {requestModel.key} not found");
             return NotFound(new ResponseModel<string>
             {
-                Data = "Key not found",
                 Success = false,
-                Message = $"Patch request failed : key={requestModel.key} not found"
+                Message = "Key not found"
             });
         }
+
+        /// <summary>
+        /// Delete and existing key-value pair if found
+        /// </summary>
+        /// <param name="key">key</param>
+        /// <returns>key removed</returns>
         [HttpDelete("{key}")]
         public IActionResult Delete(string key)
         {
-            if (KeyValueStore.ContainsKey(key))
+            if (keyValueStore.ContainsKey(key))
             {
-                _logger.LogInformation($"Delete request received : key={key}");
-                KeyValueStore.Remove(key);
+                _logger.LogInformation($"DELETE request removing key {key}");
+
+                keyValueStore.Remove(key);
+
                 return Ok(new ResponseModel<string>
                 {
-                    Data = "Key deleted successfully",
                     Success = true,
-                    Message = $"Delete request received : key={key}"
+                    Message = "Deleted successfully",
+                    Data = $"Key: {key} removed"
                 });
             }
-            _logger.LogInformation($"Delete request failed : key={key} not found");
+
+            _logger.LogWarning($"DELETE request failed: Key {key} not found");
             return NotFound(new ResponseModel<string>
             {
-                Data = "Key not found",
                 Success = false,
-                Message = $"Delete request failed : key={key} not found"
+                Message = "Key not found"
             });
         }
+
+        /// <summary>
+        /// Get a greeting message using business layer
+        /// </summary>
+        /// <returns>Greeting Message</returns>
         [HttpGet("greet")]
         public IActionResult GetGreeting()
         {
@@ -142,6 +173,7 @@ namespace HelloGreetingApplication.Controllers
 
             return Ok(responseModel);
         }
+
         /// <summary>
         /// Get a personalized greeting message
         /// </summary>
@@ -165,6 +197,49 @@ namespace HelloGreetingApplication.Controllers
             });
         }
 
+        /// <summary>
+        /// save a greeting in the database
+        /// </summary>
+        /// <param name="message">string containing a greeting message</param>
+        /// <returns>saved greeting</returns>
+        [HttpPost("saveGreeting")]
+
+        public IActionResult SaveGreeting([FromBody] string message)
+        {
+            _logger.LogInformation("POST request received at /hellogreeting/saveGreeting");
+
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                _logger.LogWarning("SaveGreeting received an empty message.");
+                return BadRequest(new ResponseModel<string>
+                {
+                    Success = false,
+                    Message = "Message cannot be empty."
+                });
+            }
+
+            try
+            {
+                var savedGreeting = _greetingBL.SaveGreeting(message);
+                _logger.LogInformation("Greeting saved successfully.");
+
+                return Ok(new ResponseModel<GreetingEntity>
+                {
+                    Success = true,
+                    Message = "Greeting saved successfully",
+                    Data = savedGreeting
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error saving greeting: {ex.Message}");
+                return StatusCode(500, new ResponseModel<string>
+                {
+                    Success = false,
+                    Message = "An error occurred while saving the greeting."
+                });
+            }
+        }
 
     }
 }
