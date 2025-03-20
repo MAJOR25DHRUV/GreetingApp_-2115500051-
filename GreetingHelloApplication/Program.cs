@@ -1,10 +1,17 @@
+using System;
+using System.IO;
+using System.Reflection;
+using BusinessLayer.Interface;
+using BusinessLayer.Service;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.OpenApi.Models;
 using NLog;
 using NLog.Web;
-using BusinessLayer.Interface;
-using BusinessLayer.Service;
+using RepositoryLayer.Context;
+using RepositoryLayer.Interface;
+using RepositoryLayer.Middleware;
 using RepositoryLayer.Service;
 using RepositoryLayer.Interface;
 
@@ -15,15 +22,55 @@ try
 {
     var builder = WebApplication.CreateBuilder(args);
 
-    // Add services to the container
-    builder.Logging.ClearProviders(); // Remove default logging providers
-    builder.Host.UseNLog(); // Use NLog
+    builder.Logging.ClearProviders();
+    builder.Host.UseNLog();
 
     builder.Services.AddScoped<IGreetingBL, GreetingBL>();
     builder.Services.AddScoped<IGreetingRL, GreetingRL>();
     builder.Services.AddControllers();
+
     builder.Services.AddEndpointsApiExplorer();
-    builder.Services.AddSwaggerGen();
+
+    // Configure Swagger to include XML documentation
+    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+
+    builder.Services.AddSwaggerGen(options =>
+    {
+        if (File.Exists(xmlPath))
+        {
+            options.IncludeXmlComments(xmlPath);
+        }
+        else
+        {
+            Console.WriteLine($"? Warning: XML documentation file not found at {xmlPath}");
+        }
+
+        // Add security definition for future JWT auth (optional)
+        options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+        {
+            Description = "JWT Authorization header using the Bearer scheme. Example: 'Bearer {token}'",
+            Name = "Authorization",
+            In = ParameterLocation.Header,
+            Type = SecuritySchemeType.Http,
+            Scheme = "Bearer"
+        });
+
+        options.AddSecurityRequirement(new OpenApiSecurityRequirement
+        {
+            {
+                new OpenApiSecurityScheme
+                {
+                    Reference = new OpenApiReference
+                    {
+                        Type = ReferenceType.SecurityScheme,
+                        Id = "Bearer"
+                    }
+                },
+                new string[] {}
+            }
+        });
+    });
 
     var app = builder.Build();
 
@@ -34,8 +81,7 @@ try
         app.UseSwaggerUI();
     }
 
-
-    app.UseHttpsRedirection();
+    app.UseMiddleware<GlobalExceptionMiddleware>();
     app.UseAuthorization();
     app.MapControllers();
 
